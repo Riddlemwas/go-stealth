@@ -1,0 +1,19 @@
+# Ignore everything by default
+*
+
+# Whitelist root meta files
+!.gitignore
+!.gitattributes
+!README.md
+!README.txt
+!riddletech-logo.png
+
+# Whitelist assets folder and logo
+!assets/
+!assets/*
+
+# Whitelist build distribution files
+!dist/
+dist/*
+!dist/Go_Stealth_Setup.exe
+!dist/Go-Stealth-x64.zip

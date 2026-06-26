@@ -1,0 +1,2 @@
+dist/Go_Stealth_Setup.exe filter=lfs diff=lfs merge=lfs -text
+dist/Go-Stealth-x64.zip filter=lfs diff=lfs merge=lfs -text
