@@ -1,8 +1,8 @@
 ========================================================================
                       GO STEALTH — USER MANUAL & SETUP GUIDE
 ========================================================================
-Welcome to Go Stealth, the invisible AI Interview Copilot designed by 
-RiddleTech to assist you during live technical interviews.
+Welcome to Go Stealth, the invisible Interview Copilot designed by 
+riddletech.co.ke to assist you during live technical interviews.
 
 This manual will guide you through setting up and using all features.
 

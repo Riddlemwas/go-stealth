@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Checkout | Go Stealth Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --accent: #00f5a0;
+      --accent2: #00d9f5;
+      --bg: #040812;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --text: #e0f0ea;
+    }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: radial-gradient(circle at 80% 20%, rgba(0, 245, 160, 0.04) 0%, transparent 40%),
+                  radial-gradient(circle at 20% 80%, rgba(0, 217, 245, 0.04) 0%, transparent 40%);
+    }
+
+    .checkout-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      padding: 40px;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .logo-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .logo-img {
+      width: 32px;
+      height: 32px;
+    }
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    h2 { font-size: 24px; font-weight: 600; margin: 0 0 10px 0; color: white; }
+    p.desc { font-size: 14px; color: #a0aec0; margin: 0 0 30px 0; line-height: 1.5; }
+
+    .summary-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    .summary-row:last-child { margin-bottom: 0; }
+    .label { color: #a0aec0; }
+    .val { color: white; font-weight: 600; }
+    .val.price { color: var(--accent); font-size: 18px; }
+    .hwid-val { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--accent2); }
+
+    #paypal-button-container {
+      margin-top: 20px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .success-panel {
+      display: none;
+    }
+    .success-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: var(--accent);
+      animation: pulse 2s infinite;
+    }
+    .success-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 12px;
+    }
+    .success-desc {
+      font-size: 14px;
+      color: #a0aec0;
+      line-height: 1.6;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+  <!-- Load the PayPal JS SDK -->
+  <!-- Replace Client-ID with dynamic placeholder or configure it directly -->
+  <script src="https://www.paypal.com/sdk/js?client-id=AZ6fQ2n5PzS-3vFz2yFm8H1K4vF3L6o-M-J7X9Vz2zFm8H1K4vF3L6o-M-J7X9Vz2zFm8H1K4vF3L6o&currency=USD"></script>
+</head>
+<body>
+  <div class="checkout-card" id="checkout-box">
+    <!-- Payment Box Form -->
+    <div id="payment-panel">
+      <div class="logo-header">
+        <img src="riddletech-logo.png" alt="Logo" class="logo-img" />
+        <span class="logo-text">Go Stealth Pro</span>
+      </div>
+      <h2>Secure Checkout</h2>
+      <p class="desc">Link your subscription to your unique Machine ID for instant hardware activation.</p>
+
+      <div class="summary-box">
+        <div class="summary-row">
+          <span class="label">Product</span>
+          <span class="val">Go Stealth license</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">Selected Plan</span>
+          <span class="val" id="plan-name">Loading...</span>
+        </div>
+        <div class="summary-row">
+          <span class="label">Machine ID</span>
+          <span class="val hwid-val" id="hwid-name">Loading...</span>
+        </div>
+        <div class="summary-row" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
+          <span class="label" style="font-weight: 600; color: white;">Total Due</span>
+          <span class="val price" id="plan-price">$0.00</span>
+        </div>
+      </div>
+
+      <div id="paypal-button-container"></div>
+    </div>
+
+    <!-- Success Modal Box -->
+    <div class="success-panel" id="success-panel">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Payment Successful!</div>
+      <div class="success-desc">
+        Your subscription has been securely linked and activated.<br /><br />
+        You can now safely close this browser tab and return to the **Go Stealth** desktop application.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Read Query Parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const hwid = urlParams.get('hwid');
+    const plan = urlParams.get('plan') || '1 Month';
+
+    if (!hwid) {
+      alert("Missing Machine ID (HWID). Please open this checkout page directly from the Go Stealth app.");
+      document.getElementById('checkout-box').innerHTML = "<h2>Error</h2><p class='desc'>Invalid Machine ID</p>";
+    }
+
+    // 2. Plan mappings
+    const planData = {
+      '1 Month': { name: '1 Month License', price: '10.00', amount: 10.00 },
+      '3 Months': { name: '3 Months License', price: '49.99', amount: 49.99 },
+      'Annual': { name: 'Annual License', price: '149.99', amount: 149.99 }
+    };
+
+    const selectedPlan = planData[plan] || planData['1 Month'];
+    document.getElementById('plan-name').textContent = selectedPlan.name;
+    document.getElementById('hwid-name').textContent = hwid;
+    document.getElementById('plan-price').textContent = `$${selectedPlan.price}`;
+
+    // 3. Render PayPal Buttons
+    paypal.Buttons({
+      createOrder: function(data, actions) {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: selectedPlan.price
+            },
+            description: `Go Stealth ${selectedPlan.name} for Machine ID: ${hwid}`,
+            custom_id: hwid // Link payment to user HWID
+          }]
+        });
+      },
+      onApprove: function(data, actions) {
+        // Show loading state while confirming with your server
+        document.getElementById('paypal-button-container').innerHTML = "<p style='color: var(--accent); font-weight:600;'>Capturing transaction...</p>";
+        
+        return fetch('/api/paypal/capture/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderID: data.orderID,
+            hwid: hwid,
+            plan: selectedPlan.name,
+            amount: selectedPlan.price
+          })
+        }).then(function(res) {
+          return res.json();
+        }).then(function(details) {
+          if (details.success) {
+            document.getElementById('payment-panel').style.display = 'none';
+            document.getElementById('success-panel').style.display = 'block';
+          } else {
+            alert("Error confirming payment: " + (details.error || 'Server Capture Failed'));
+            window.location.reload();
+          }
+        }).catch(function(err) {
+          alert("Network error: " + err.message);
+          window.location.reload();
+        });
+      }
+    }).render('#paypal-button-container');
+  </script>
+</body>
+</html>

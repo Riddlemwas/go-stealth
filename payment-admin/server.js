@@ -208,6 +208,69 @@ app.post(['/api/stkpush', '/api/stkpush/'], async (req, res) => {
   }
 });
 
+// ─── PAYPAL INTEGRATION CONFIG ────────────────────────────────────────────
+const PAYPAL_CONFIG = {
+  CLIENT_ID: process.env.PAYPAL_CLIENT_ID || 'AZ6fQ2n5PzS-3vFz2yFm8H1K4vF3L6o-M-J7X9Vz2zFm8H1K4vF3L6o',
+  CLIENT_SECRET: process.env.PAYPAL_CLIENT_SECRET || 'ELk8Wn_Y8gM9h1J4vF3L6o-M-J7X9Vz2zFm8H1K4vF3L6o',
+  API_URL: process.env.PAYPAL_MODE === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com'
+};
+
+const getPayPalAccessToken = async () => {
+  const auth = Buffer.from(`${PAYPAL_CONFIG.CLIENT_ID}:${PAYPAL_CONFIG.CLIENT_SECRET}`).toString('base64');
+  const res = await axios.post(`${PAYPAL_CONFIG.API_URL}/v1/oauth2/token`, 'grant_type=client_credentials', {
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  });
+  return res.data.access_token;
+};
+
+/**
+ * Capture PayPal Payment Order securely
+ * POST /api/paypal/capture
+ */
+app.post(['/api/paypal/capture', '/api/paypal/capture/'], async (req, res) => {
+  const { orderID, hwid, plan, amount } = req.body;
+  if (!orderID || !hwid) {
+    return res.status(400).json({ success: false, error: 'Missing orderID or Machine ID (HWID)' });
+  }
+
+  try {
+    const token = await getPayPalAccessToken();
+    const response = await axios.post(`${PAYPAL_CONFIG.API_URL}/v2/checkout/orders/${orderID}/capture`, {}, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const status = response.data.status;
+    if (status === 'COMPLETED') {
+      // Save successful transaction
+      const transactions = JSON.parse(fs.readFileSync(CONFIG.DATA_FILE, 'utf8') || '[]');
+      transactions.push({
+        id: orderID,
+        hwid,
+        phone: 'PayPal',
+        amount: amount || '10.00',
+        plan: plan || '1 Month',
+        status: 'Success',
+        date: new Date().toISOString(),
+        receipt: response.data.purchase_units[0].payments.captures[0].id
+      });
+      fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(transactions, null, 2));
+
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ success: false, error: `Order status is: ${status}. Expected COMPLETED.` });
+    }
+  } catch (e) {
+    const errMsg = e.response ? e.response.data.message || e.response.data.error_description : e.message;
+    res.status(500).json({ success: false, error: errMsg });
+  }
+});
+
 /**
  * Admin: Revoke Subscription / License Key
  * POST /api/admin/revoke
