@@ -23,3 +23,13 @@ dist/*
 !go stealth website/*
 !website/
 !website/*
+
+# Whitelist packaging configurations
+!setup.iss
+
+# Whitelist payment-admin (exclude JSON database files)
+!payment-admin/
+!payment-admin/*
+payment-admin/keys.json
+payment-admin/transactions.json
+payment-admin/secret.json

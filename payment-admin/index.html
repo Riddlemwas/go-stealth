@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Admin Login | Go Stealth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --accent: #00f5a0;
+      --bg: #080c16;
+      --glass: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+    body {
+      margin: 0; padding: 0;
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: white;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .login-card {
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      padding: 40px;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    .logo {
+      width: 64px; height: 64px;
+      margin-bottom: 20px;
+    }
+    h2 { margin: 0 0 10px; font-weight: 600; color: var(--accent); letter-spacing: 1px; }
+    p { margin: 0 0 30px; font-size: 14px; color: #a0aec0; }
+    .input-wrap { position: relative; width: 100%; margin-bottom: 20px; }
+    input {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--glass-border);
+      color: white;
+      padding: 12px 45px 12px 16px;
+      border-radius: 12px;
+      font-family: inherit;
+      font-size: 16px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--accent); }
+    .toggle-pass {
+      position: absolute;
+      right: 15px; top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #a0aec0;
+      font-size: 18px;
+    }
+    button {
+      width: 100%;
+      background: var(--accent);
+      color: #080c16;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 245, 160, 0.3);
+    }
+    .links { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .links a { color: #a0aec0; font-size: 12px; text-decoration: none; transition: color 0.2s; }
+    .links a:hover { color: var(--accent); }
+    .error { color: #ff4466; font-size: 12px; margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <img src="riddletech-logo.png" alt="Logo" class="logo" />
+    <h2>ADMIN ACCESS</h2>
+    <p>Go Stealth Payment Management</p>
+    <form id="login-form">
+      <div class="input-wrap">
+        <input type="password" id="password" placeholder="Admin Password" required />
+        <span class="toggle-pass" id="toggle-btn">👁</span>
+      </div>
+      <button type="submit" id="submit-btn">Login to Dashboard</button>
+      <div id="error-msg" class="error">Invalid admin password</div>
+    </form>
+    <div class="links">
+      <a href="#" id="reset-link">Forgot Password?</a>
+      <a href="https://payments.riddletech.co.ke">← Back to Site</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const passInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('toggle-btn');
+    const error = document.getElementById('error-msg');
+    const resetLink = document.getElementById('reset-link');
+
+    // Show/Hide Password
+    toggleBtn.addEventListener('click', () => {
+      const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passInput.setAttribute('type', type);
+      toggleBtn.textContent = type === 'password' ? '👁' : '🙈';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const entered = passInput.value.trim();
+      
+      // We will check against the server's secure endpoint
+      try {
+        const res = await fetch('/api/admin/login/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: entered })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_password', entered);
+          window.location.href = 'dashboard.html';
+        } else {
+          error.style.display = 'block';
+          passInput.value = '';
+        }
+      } catch (err) {
+        // Fallback for local testing if server not running
+        if (entered === 'RiddleTech3311@#') {
+           localStorage.setItem('admin_token', 'local_dev_token');
+           window.location.href = 'dashboard.html';
+        } else {
+           error.textContent = "Server connection error";
+           error.style.display = 'block';
+        }
+      }
+    });
+
+    resetLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      alert("Password Reset: Please contact RiddleTech Support or check the 'secret.json' file on your server to recover your access.");
+    });
+  </script>
+</body>
+</html>
