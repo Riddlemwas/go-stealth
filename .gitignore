@@ -17,3 +17,9 @@
 dist/*
 !dist/Go_Stealth_Setup.exe
 !dist/Go-Stealth-x64.zip
+
+# Whitelist website files
+!go stealth website/
+!go stealth website/*
+!website/
+!website/*
