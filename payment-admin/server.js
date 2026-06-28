@@ -1,6 +1,6 @@
 /**
  * server.js — Go Stealth Payment Backend
- * Handles: M-Pesa Daraja Integration (STK Push), Callbacks, Subscription Checks
+ * Handles: PayPal IPN callbacks, License Keys, and Subscription Verification (Production Ready)
  */
 
 const express = require('express');
@@ -16,13 +16,8 @@ app.use(cors());
 
 // Trailing slashes are handled directly in the route registration arrays to prevent redirect loops.
 
-// ─── CONFIGURATION (Fill these with your Daraja details) ──────────────────
+// ─── CONFIGURATION ────────────────────────────────────────────────────────
 const CONFIG = {
-  CONSUMER_KEY: 'YOUR_CONSUMER_KEY',
-  CONSUMER_SECRET: 'YOUR_CONSUMER_SECRET',
-  SHORTCODE: 'YOUR_SHORTCODE',
-  PASSKEY: 'YOUR_PASSKEY',
-  CALLBACK_URL: 'https://payments.riddletech.co.ke/api/callback',
   SECRET_FILE: path.join(__dirname, 'secret.json'),
   DATA_FILE: path.join(__dirname, 'transactions.json'),
   KEYS_FILE: path.join(__dirname, 'keys.json')
@@ -37,23 +32,7 @@ const getSecret = () => {
 };
 
 // ─── UTILS ────────────────────────────────────────────────────────────────
-const getTimestamp = () => {
-  const now = new Date();
-  return now.getFullYear() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0') +
-    String(now.getHours()).padStart(2, '0') +
-    String(now.getMinutes()).padStart(2, '0') +
-    String(now.getSeconds()).padStart(2, '0');
-};
-
-const getAccessToken = async () => {
-  const auth = Buffer.from(`${CONFIG.CONSUMER_KEY}:${CONFIG.CONSUMER_SECRET}`).toString('base64');
-  const res = await axios.get('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
-    headers: { Authorization: `Basic ${auth}` }
-  });
-  return res.data.access_token;
-};
+// Utility functions for payments are handled directly by the PayPal endpoints.
 
 // ─── API ENDPOINTS ────────────────────────────────────────────────────────
 
@@ -161,53 +140,7 @@ app.get(['/api/admin/keys', '/api/admin/keys/'], (req, res) => {
   res.json(keys);
 });
 
-/**
- * Trigger STK Push
- * POST /api/stkpush
- */
-app.post(['/api/stkpush', '/api/stkpush/'], async (req, res) => {
-  try {
-    const { phone, amount, hwid, plan } = req.body;
-    const token = await getAccessToken();
-    const timestamp = getTimestamp();
-    const password = Buffer.from(CONFIG.SHORTCODE + CONFIG.PASSKEY + timestamp).toString('base64');
-
-    const data = {
-      BusinessShortCode: CONFIG.SHORTCODE,
-      Password: password,
-      Timestamp: timestamp,
-      TransactionType: 'CustomerPayBillOnline',
-      Amount: amount,
-      PartyA: phone, // e.g. 254712345678
-      PartyB: CONFIG.SHORTCODE,
-      PhoneNumber: phone,
-      CallBackURL: CONFIG.CALLBACK_URL,
-      AccountReference: 'Go Stealth Sub',
-      TransactionDesc: `Subscription for ${hwid}`
-    };
-
-    const response = await axios.post('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', data, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    // Save pending transaction
-    const transactions = JSON.parse(fs.readFileSync(CONFIG.DATA_FILE, 'utf8') || '[]');
-    transactions.push({
-      id: response.data.CheckoutRequestID,
-      hwid,
-      phone,
-      amount,
-      plan,
-      status: 'Pending',
-      date: new Date().toISOString()
-    });
-    fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(transactions, null, 2));
-
-    res.json({ success: true, checkoutId: response.data.CheckoutRequestID });
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message });
-  }
-});
+// (M-Pesa STK Push route removed for pure card/paypal production deployment)
 
 /**
  * PayPal IPN (Instant Payment Notification) Callback
@@ -299,28 +232,7 @@ app.post(['/api/admin/revoke', '/api/admin/revoke/'], (req, res) => {
   }
 });
 
-/**
- * M-Pesa Callback
- * POST /api/callback
- */
-app.post(['/api/callback', '/api/callback/'], (req, res) => {
-  const result = req.body.Body.stkCallback;
-  const transactions = JSON.parse(fs.readFileSync(CONFIG.DATA_FILE, 'utf8') || '[]');
-  const index = transactions.findIndex(t => t.id === result.CheckoutRequestID);
-
-  if (index !== -1) {
-    if (result.ResultCode === 0) {
-      transactions[index].status = 'Success';
-      transactions[index].receipt = result.CallbackMetadata.Item[1].Value;
-    } else {
-      transactions[index].status = 'Failed';
-      transactions[index].reason = result.ResultDesc;
-    }
-    fs.writeFileSync(CONFIG.DATA_FILE, JSON.stringify(transactions, null, 2));
-  }
-
-  res.status(200).send('OK');
-});
+// (M-Pesa callback endpoint removed)
 
 /**
  * Check Subscription Status
